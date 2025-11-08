@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Multi-Model Prediction</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            background: white;
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+        
+        .tab:hover {
+            background: #e9ecef;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 40px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-reset {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-reset:hover {
+            background: #e0e0e0;
+        }
+        
+        .result-box {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 15px;
+            display: none;
+        }
+        
+        .result-box.wine.good {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .result-box.wine.bad {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+        
+        .result-box.customer {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+        }
+        
+        .result-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .result-item {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .result-item h3 {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+        
+        .result-item p {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .api-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .api-info h3 {
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+        
+        .api-info input {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .cluster-meaning {
+            background: rgba(0,0,0,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Multi-Model Prediction</h1>
+            <p>Dự đoán chất lượng rượu vang & Phân loại khách hàng</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('wine')">🍷 Wine Quality</button>
+            <button class="tab" onclick="switchTab('customer')">👥 Customer Segmentation</button>
+        </div>
+        
+        <!-- Wine Quality Tab -->
+        <div id="wine-tab" class="tab-content active">
+            <h2>🍷 Dự đoán Chất lượng Rượu vang</h2>
+            <p style="margin-bottom: 20px; color: #666;">Nhập các thông số hóa lý của rượu vang để dự đoán chất lượng</p>
+            
+            <form id="wineForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fixed_acidity">Fixed Acidity (g/L)</label>
+                        <input type="number" id="fixed_acidity" step="0.1" value="7.4" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="volatile_acidity">Volatile Acidity (g/L)</label>
+                        <input type="number" id="volatile_acidity" step="0.01" value="0.7" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="citric_acid">Citric Acid (g/L)</label>
+                        <input type="number" id="citric_acid" step="0.01" value="0.0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="chlorides">Chlorides (g/L)</label>
+                        <input type="number" id="chlorides" step="0.001" value="0.076" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="total_sulfur_dioxide">Total SO₂ (mg/L)</label>
+                        <input type="number" id="total_sulfur_dioxide" step="1" value="34" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="density">Density (g/cm³)</label>
+                        <input type="number" id="density" step="0.0001" value="0.9978" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sulphates">Sulphates (g/L)</label>
+                        <input type="number" id="sulphates" step="0.01" value="0.56" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="alcohol">Alcohol (%)</label>
+                        <input type="number" id="alcohol" step="0.1" value="9.4" required>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn-predict">🔮 Dự đoán Wine</button>
+                    <button type="reset" class="btn-reset">🔄 Reset</button>
+                </div>
+            </form>
+            
+            <div class="loading" id="wineLoading">⏳ Đang dự đoán...</div>
+            <div class="error" id="wineError"></div>
+            
+            <div class="result-box wine" id="wineResult">
+                <div class="result-title" id="wineResultTitle"></div>
+                <div class="result-details">
+                    <div class="result-item">
+                        <h3>Xác suất Bad</h3>
+                        <p id="wineProbBad"></p>
+                    </div>
+                    <div class="result-item">
+                        <h3>Xác suất Good</h3>
+                        <p id="wineProbGood"></p>
+                    </div>
+                    <div class="result-item">
+                        <h3>Độ tin cậy</h3>
+                        <p id="wineConfidence"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Customer Segmentation Tab -->
+        <div id="customer-tab" class="tab-content">
+            <h2>👥 Phân loại Khách hàng</h2>
+            <p style="margin-bottom: 20px; color: #666;">Nhập thu nhập và điểm chi tiêu để phân loại nhóm khách hàng</p>
+            
+            <form id="customerForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="annual_income">Annual Income (k$)</label>
+                        <input type="number" id="annual_income" step="1" value="50" required>
+                        <small style="color: #666;">Thu nhập hàng năm (nghìn USD)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="spending_score">Spending Score (1-100)</label>
+                        <input type="number" id="spending_score" step="1" value="60" min="1" max="100" required>
+                        <small style="color: #666;">Điểm chi tiêu từ 1-100</small>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn-predict">👥 Phân loại Customer</button>
+                    <button type="reset" class="btn-reset">🔄 Reset</button>
+                </div>
+            </form>
+            
+            <div class="loading" id="customerLoading">⏳ Đang phân tích...</div>
+            <div class="error" id="customerError"></div>
+            
+            <div class="result-box customer" id="customerResult">
+                <div class="result-title" id="customerResultTitle"></div>
+                <div class="cluster-meaning" id="customerMeaning"></div>
+                <div class="result-details">
+                    <div class="result-item">
+                        <h3>Cluster</h3>
+                        <p id="customerCluster"></p>
+                    </div>
+                    <div class="result-item">
+                        <h3>Độ tin cậy</h3>
+                        <p id="customerConfidence"></p>
+                    </div>
+                    <div class="result-item">
+                        <h3>Thu nhập Centroid</h3>
+                        <p id="customerCentroidIncome"></p>
+                    </div>
+                    <div class="result-item">
+                        <h3>Chi tiêu Centroid</h3>
+                        <p id="customerCentroidSpending"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="api-info">
+            <h3>⚙️ API Configuration</h3>
+            <p>Địa chỉ API endpoint:</p>
+            <input type="text" id="apiUrl" value="http://localhost:5000" placeholder="http://localhost:5000">
+            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                💡 Đổi thành IP của server nếu chạy trên máy khác (ví dụ: http://192.168.1.100:5000)
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Hide results
+            document.getElementById('wineResult').style.display = 'none';
+            document.getElementById('customerResult').style.display = 'none';
+        }
+        
+        // Wine Quality Form
+        document.getElementById('wineForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            hideElements(['wineResult', 'wineError']);
+            showElement('wineLoading');
+            
+            const data = {
+                fixed_acidity: parseFloat(document.getElementById('fixed_acidity').value),
+                volatile_acidity: parseFloat(document.getElementById('volatile_acidity').value),
+                citric_acid: parseFloat(document.getElementById('citric_acid').value),
+                chlorides: parseFloat(document.getElementById('chlorides').value),
+                total_sulfur_dioxide: parseFloat(document.getElementById('total_sulfur_dioxide').value),
+                density: parseFloat(document.getElementById('density').value),
+                sulphates: parseFloat(document.getElementById('sulphates').value),
+                alcohol: parseFloat(document.getElementById('alcohol').value)
+            };
+            
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const response = await fetch(`${apiUrl}/predict/wine`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                hideElement('wineLoading');
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi khi gọi API');
+                }
+                
+                displayWineResult(result);
+                
+            } catch (err) {
+                hideElement('wineLoading');
+                showError('wineError', `❌ Lỗi: ${err.message}`);
+            }
+        });
+        
+        // Customer Segmentation Form
+        document.getElementById('customerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            hideElements(['customerResult', 'customerError']);
+            showElement('customerLoading');
+            
+            const data = {
+                annual_income: parseFloat(document.getElementById('annual_income').value),
+                spending_score: parseFloat(document.getElementById('spending_score').value)
+            };
+            
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const response = await fetch(`${apiUrl}/predict/customer`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                hideElement('customerLoading');
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi khi gọi API');
+                }
+                
+                displayCustomerResult(result);
+                
+            } catch (err) {
+                hideElement('customerLoading');
+                showError('customerError', `❌ Lỗi: ${err.message}`);
+            }
+        });
+        
+        function displayWineResult(result) {
+            const isGood = result.prediction === 1;
+            const resultBox = document.getElementById('wineResult');
+            
+            resultBox.className = 'result-box wine ' + (isGood ? 'good' : 'bad');
+            document.getElementById('wineResultTitle').textContent = 
+                isGood ? '🎉 Chất lượng TỐT (≥6 điểm)' : '⚠️ Chất lượng KÉM (<6 điểm)';
+            
+            document.getElementById('wineProbBad').textContent = 
+                (result.probability['Bad (<6)'] * 100).toFixed(1) + '%';
+            document.getElementById('wineProbGood').textContent = 
+                (result.probability['Good (≥6)'] * 100).toFixed(1) + '%';
+            document.getElementById('wineConfidence').textContent = 
+                (result.confidence * 100).toFixed(1) + '%';
+            
+            showElement('wineResult');
+        }
+        
+        function displayCustomerResult(result) {
+            document.getElementById('customerResultTitle').textContent = 
+                `👤 Nhóm khách hàng: Cluster ${result.cluster}`;
+            document.getElementById('customerMeaning').textContent = result.cluster_meaning;
+            document.getElementById('customerCluster').textContent = result.cluster;
+            document.getElementById('customerConfidence').textContent = 
+                (result.confidence * 100).toFixed(1) + '%';
+            document.getElementById('customerCentroidIncome').textContent = 
+                result.centroid_coordinates.annual_income.toFixed(0) + 'k$';
+            document.getElementById('customerCentroidSpending').textContent = 
+                result.centroid_coordinates.spending_score.toFixed(0);
+            
+            showElement('customerResult');
+        }
+        
+        function showElement(id) {
+            document.getElementById(id).style.display = 'block';
+        }
+        
+        function hideElement(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        
+        function hideElements(ids) {
+            ids.forEach(id => hideElement(id));
+        }
+        
+        function showError(id, message) {
+            document.getElementById(id).textContent = message;
+            showElement(id);
+        }
+        
+        // Reset forms
+        document.getElementById('wineForm').addEventListener('reset', () => {
+            hideElements(['wineResult', 'wineError']);
+        });
+        
+        document.getElementById('customerForm').addEventListener('reset', () => {
+            hideElements(['customerResult', 'customerError']);
+        });
+    </script>
+</body>
+</html>
