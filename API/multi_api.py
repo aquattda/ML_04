@@ -2,61 +2,79 @@
 API Flask tổng hợp - Multi-Model Prediction
 1. Dự đoán chất lượng rượu vang (Wine Quality)
 2. Phân loại khách hàng K-Means (Customer Segmentation)
+
+BƯỚC KHỞI TẠO API:
+1. Import các thư viện cần thiết
+2. Khởi tạo Flask app và cấu hình CORS
+3. Định nghĩa đường dẫn tới các models
+4. Load models từ file .joblib
+5. Định nghĩa features cho từng model
+6. Tạo các endpoints API
 """
 
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import joblib
-import numpy as np
-import pandas as pd
-import os
+# BƯỚC 1: IMPORT THƯ VIỆN 
+from flask import Flask, request, jsonify  # Flask framework cho API
+from flask_cors import CORS                # Cho phép cross-origin requests
+import joblib                             # Để load models đã lưu
+import numpy as np                        # Xử lý arrays
+import pandas as pd                       # Xử lý data
+import os                                 # Xử lý file paths
 
-# Khởi tạo Flask app
-app = Flask(__name__)
-CORS(app)  # Cho phép CORS để web/mobile có thể gọi API
+# BƯỚC 2: KHỞI TẠO FLASK APP 
+app = Flask(__name__)                     # Tạo instance Flask
+CORS(app)                                # Cho phép CORS để web/mobile có thể gọi API
 
-# Đường dẫn tới các models đã lưu
-WINE_MODEL_PATH = "../models/rf_winequality_best.joblib"
-KMEANS_MODEL_PATH = "../models/modelskmeans_mall.joblib"
-SCALER_MODEL_PATH = "../models/scaler_mall.joblib"
+# BƯỚC 3: ĐỊNH NGHĨA ĐƯỜNG DẪN MODEL
+# Đường dẫn tương đối từ thư mục API/ tới thư mục models/
+WINE_MODEL_PATH = "../models/rf_winequality_best.joblib"     # Random Forest model
+KMEANS_MODEL_PATH = "../models/modelskmeans_mall.joblib"     # K-Means model
+SCALER_MODEL_PATH = "../models/scaler_mall.joblib"          # StandardScaler
 
-# Load models khi khởi động server
+# BƯỚC 4: LOAD MODELS KHI KHỞI ĐỘNG SERVER
+# Load Wine Quality Model (Random Forest)
 try:
     wine_model = joblib.load(WINE_MODEL_PATH)
-    print(f"✅ Đã load Wine Quality model từ {WINE_MODEL_PATH}")
+    print(f"Đã load Wine Quality model từ {WINE_MODEL_PATH}")
 except Exception as e:
-    print(f"❌ Lỗi khi load Wine model: {e}")
+    print(f"Lỗi khi load Wine model: {e}")
     wine_model = None
 
+# Load K-Means Model và Scaler
 try:
     kmeans_model = joblib.load(KMEANS_MODEL_PATH)
     scaler_model = joblib.load(SCALER_MODEL_PATH)
-    print(f"✅ Đã load K-Means model từ {KMEANS_MODEL_PATH}")
-    print(f"✅ Đã load Scaler từ {SCALER_MODEL_PATH}")
+    print(f"Đã load K-Means model từ {KMEANS_MODEL_PATH}")
+    print(f"Đã load Scaler từ {SCALER_MODEL_PATH}")
 except Exception as e:
-    print(f"❌ Lỗi khi load K-Means model: {e}")
+    print(f"Lỗi khi load K-Means model: {e}")
     kmeans_model = None
     scaler_model = None
 
-# Features cho Wine Quality (8 features)
+#   BƯỚC 5: ĐỊNH NGHĨA FEATURES CHO TỪNG MODEL  
+
+# Features cho Wine Quality Model (8 features - Random Forest)
+# Model này dự đoán chất lượng rượu vang từ 8 đặc tính hóa học
 WINE_FEATURES = [
-    "fixed_acidity",
-    "volatile_acidity", 
-    "citric_acid",
-    "chlorides",
-    "total_sulfur_dioxide",
-    "density",
-    "sulphates",
-    "alcohol"
+    "fixed_acidity",          # Độ axit cố định
+    "volatile_acidity",       # Độ axit bay hơi
+    "citric_acid",           # Axit citric
+    "chlorides",             # Clorua
+    "total_sulfur_dioxide",  # Tổng lưu huỳnh dioxide
+    "density",               # Khối lượng riêng
+    "sulphates",             # Sunfat
+    "alcohol"                # Độ cồn
 ]
 
-# Features cho Customer Segmentation (2 features)
+# Features cho Customer Segmentation Model (2 features - K-Means)
+# Model này phân khúc khách hàng dựa trên thu nhập và điểm chi tiêu
 CUSTOMER_FEATURES = [
-    "annual_income",  # Annual Income (k$)
-    "spending_score"  # Spending Score (1-100)
+    "annual_income",  # Thu nhập hàng năm (k$)
+    "spending_score"  # Điểm chi tiêu (1-100)
 ]
 
-# Mapping cluster labels to business meanings
+#   BƯỚC 6: ĐỊNH NGHĨA BUSINESS LOGIC  
+
+# Mapping cluster labels thành ý nghĩa business cho khách hàng
 CLUSTER_MEANINGS = {
     0: "Tiết kiệm - Thu nhập thấp, Chi tiêu ít",
     1: "Cẩn thận - Thu nhập cao, Chi tiêu ít", 
@@ -65,11 +83,17 @@ CLUSTER_MEANINGS = {
     4: "VIP - Thu nhập cao, Chi tiêu cao"
 }
 
+#   BƯỚC 7: TẠO CÁC API ENDPOINTS  
+
 @app.route('/')
 def home():
-    """Trang chủ API - hướng dẫn sử dụng"""
+    """
+    ENDPOINT 1: Trang chủ API - Hướng dẫn sử dụng
+    Method: GET
+    Purpose: Cung cấp thông tin về API và các endpoints
+    """
     return jsonify({
-        "message": "🤖 Multi-Model Prediction API",
+        "message": "Multi-Model Prediction API",
         "version": "2.0",
         "models": {
             "wine_quality": "Dự đoán chất lượng rượu vang",
@@ -101,10 +125,16 @@ def home():
             }
         }
     })
+    
+    
 
 @app.route('/health', methods=['GET'])
 def health():
-    """Kiểm tra trạng thái API và models"""
+    """
+    ENDPOINT 2: Health Check - Kiểm tra trạng thái API
+    Method: GET
+    Purpose: Kiểm tra xem API và các models đã load thành công hay chưa
+    """
     return jsonify({
         "status": "ok",
         "models": {
@@ -117,26 +147,18 @@ def health():
 @app.route('/predict/wine', methods=['POST'])
 def predict_wine():
     """
-    Dự đoán chất lượng rượu vang
+    ENDPOINT 3: Wine Quality Prediction - Dự đoán chất lượng rượu vang
+    Method: POST
+    Purpose: Dự đoán chất lượng rượu vang từ 8 đặc tính hóa học
     
-    Request body (JSON):
-    {
-        "fixed_acidity": 7.4,
-        "volatile_acidity": 0.7,
-        "citric_acid": 0.0,
-        "chlorides": 0.076,
-        "total_sulfur_dioxide": 34.0,
-        "density": 0.9978,
-        "sulphates": 0.56,
-        "alcohol": 9.4
-    }
+    Input: JSON với 8 features
+    Output: Predicted quality score (3-8)
     """
     if wine_model is None:
         return jsonify({"error": "Wine Quality model chưa được load"}), 500
     
     try:
         data = request.get_json()
-        
         # Kiểm tra features
         missing_features = [f for f in WINE_FEATURES if f not in data]
         if missing_features:
@@ -145,15 +167,12 @@ def predict_wine():
                 "missing_features": missing_features,
                 "required_features": WINE_FEATURES
             }), 400
-        
         # Tạo DataFrame
         input_data = pd.DataFrame([[data[f] for f in WINE_FEATURES]], 
                                    columns=WINE_FEATURES)
-        
         # Dự đoán
         prediction = wine_model.predict(input_data)[0]
         probability = wine_model.predict_proba(input_data)[0]
-        
         # Format kết quả
         quality_label = "Good (≥6)" if prediction == 1 else "Bad (<6)"
         confidence = float(max(probability))
@@ -176,9 +195,14 @@ def predict_wine():
 @app.route('/predict/customer', methods=['POST'])
 def predict_customer():
     """
-    Phân loại khách hàng K-Means
+    ENDPOINT 4: Customer Segmentation - Phân loại khách hàng K-Means
+    Method: POST
+    Purpose: Phân khúc khách hàng dựa trên thu nhập và điểm chi tiêu
     
-    Request body (JSON):
+    Input: JSON với 2 features (annual_income, spending_score)
+    Output: Cluster number (0-4) và business meaning
+    
+    Request body example (JSON):
     {
         "annual_income": 50,
         "spending_score": 60
@@ -198,25 +222,19 @@ def predict_customer():
                 "missing_features": missing_features,
                 "required_features": CUSTOMER_FEATURES
             }), 400
-        
         # Chuẩn bị dữ liệu (theo thứ tự của training)
         # K-Means model được train với ['Annual Income (k$)', 'Spending Score (1-100)']
         input_data = np.array([[data["annual_income"], data["spending_score"]]])
-        
         # Scaling (như trong training)
         input_scaled = scaler_model.transform(input_data)
-        
         # Dự đoán cluster
         cluster = kmeans_model.predict(input_scaled)[0]
-        
         # Lấy khoảng cách đến các centroids
         distances = kmeans_model.transform(input_scaled)[0]
         confidence = 1 - (distances[cluster] / np.sum(distances))  # Confidence score
-        
         # Lấy centroids gốc (unscaled)
         centroids_scaled = kmeans_model.cluster_centers_
         centroids_orig = scaler_model.inverse_transform(centroids_scaled)
-        
         return jsonify({
             "model": "customer_segmentation",
             "cluster": int(cluster),
@@ -238,7 +256,6 @@ def predict_customer():
             ],
             "input_features": data
         })
-    
     except Exception as e:
         return jsonify({"error": f"Lỗi khi phân loại Customer: {str(e)}"}), 500
 
@@ -286,7 +303,7 @@ def predict_batch():
                     
                     # Dự đoán
                     input_data = pd.DataFrame([[sample[f] for f in WINE_FEATURES]], 
-                                               columns=WINE_FEATURES)
+                                            columns=WINE_FEATURES)
                     prediction = wine_model.predict(input_data)[0]
                     probability = wine_model.predict_proba(input_data)[0]
                     
@@ -302,7 +319,6 @@ def predict_batch():
                         },
                         "confidence": float(max(probability))
                     })
-                    
                 except Exception as e:
                     results["wine_predictions"].append({
                         "sample_index": idx,
@@ -321,7 +337,6 @@ def predict_batch():
                             "error": f"Thiếu features: {missing}"
                         })
                         continue
-                    
                     # Dự đoán
                     input_data = np.array([[sample["annual_income"], sample["spending_score"]]])
                     input_scaled = scaler_model.transform(input_data)
@@ -341,7 +356,6 @@ def predict_batch():
                         "sample_index": idx,
                         "error": str(e)
                     })
-        
         return jsonify(results)
     
     except Exception as e:
@@ -349,7 +363,11 @@ def predict_batch():
 
 @app.route('/models/info', methods=['GET'])
 def models_info():
-    """Lấy thông tin về các models"""
+    """
+    ENDPOINT 6: Models Information - Thông tin về các models
+    Method: GET
+    Purpose: Trả về thông tin chi tiết về các models đã load
+    """
     info = {
         "wine_quality": None,
         "customer_segmentation": None
@@ -381,13 +399,12 @@ def models_info():
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🤖 Multi-Model Prediction API")
+    print("Multi-Model Prediction API")
     print("="*60)
-    print(f"🍷 Wine Quality Model: {WINE_MODEL_PATH}")
-    print(f"👥 K-Means Model: {KMEANS_MODEL_PATH}")
-    print(f"📏 Scaler Model: {SCALER_MODEL_PATH}")
-    print(f"🌐 Server running on: http://localhost:5000")
-    print(f"📱 Mobile/Web can access: http://<your-ip>:5000")
+    print(f"Server running on: http://localhost:5000")
+    print(f"Mobile/Web can access: http://<your-ip>:5000")
     print("="*60 + "\n")
     
     app.run(debug=True, host='0.0.0.0', port=5000)
+    
+    
