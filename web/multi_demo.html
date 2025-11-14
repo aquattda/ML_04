@@ -389,14 +389,22 @@
         <div class="api-info">
             <h3>⚙️ API Configuration</h3>
             <p>Địa chỉ API endpoint:</p>
-            <input type="text" id="apiUrl" value="http://localhost:5000" placeholder="http://localhost:5000">
+            <input type="text" id="apiUrl" value="http://localhost:8080" placeholder="http://localhost:8080">
             <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                💡 Đổi thành IP của server nếu chạy trên máy khác (ví dụ: http://192.168.1.100:5000)
+                💡 Đổi thành IP của server nếu chạy trên máy khác (ví dụ: http://192.168.1.100:8080)
             </p>
         </div>
     </div>
     
     <script>
+        // Tự động phát hiện URL API
+        window.addEventListener('DOMContentLoaded', function() {
+            const apiUrlInput = document.getElementById('apiUrl');
+            // Lấy origin hiện tại (http://ip:port)
+            const currentOrigin = window.location.origin;
+            apiUrlInput.value = currentOrigin;
+        });
+
         // Tab switching
         function switchTab(tabName) {
             // Hide all tabs

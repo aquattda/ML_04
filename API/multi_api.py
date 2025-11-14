@@ -13,7 +13,7 @@ BƯỚC KHỞI TẠO API:
 """
 
 # BƯỚC 1: IMPORT THƯ VIỆN 
-from flask import Flask, request, jsonify  # Flask framework cho API
+from flask import Flask, request, jsonify, send_from_directory  # Flask framework cho API
 from flask_cors import CORS                # Cho phép cross-origin requests
 import joblib                             # Để load models đã lưu
 import numpy as np                        # Xử lý arrays
@@ -88,7 +88,16 @@ CLUSTER_MEANINGS = {
 @app.route('/')
 def home():
     """
-    ENDPOINT 1: Trang chủ API - Hướng dẫn sử dụng
+    ENDPOINT 1: Trang chủ - Serve file HTML
+    Method: GET
+    Purpose: Trả về giao diện web multi_demo.html
+    """
+    return send_from_directory('../web', 'multi_demo.html')
+
+@app.route('/api')
+def api_info():
+    """
+    ENDPOINT 2: API Info - Hướng dẫn sử dụng
     Method: GET
     Purpose: Cung cấp thông tin về API và các endpoints
     """
@@ -100,7 +109,8 @@ def home():
             "customer_segmentation": "Phân loại khách hàng K-Means"
         },
         "endpoints": {
-            "/": "Trang chủ (hướng dẫn)",
+            "/": "Trang chủ web",
+            "/api": "API info (hướng dẫn)",
             "/health": "Kiểm tra trạng thái API",
             "/predict/wine": "POST - Dự đoán chất lượng rượu vang",
             "/predict/customer": "POST - Phân loại khách hàng",
@@ -401,10 +411,10 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("Multi-Model Prediction API")
     print("="*60)
-    print(f"Server running on: http://localhost:5000")
-    print(f"Mobile/Web can access: http://<your-ip>:5000")
+    print(f"Server running on: http://localhost:8080")
+    print(f"Mobile/Web can access: http://<your-ip>:8080")
     print("="*60 + "\n")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=8080)
     
     
