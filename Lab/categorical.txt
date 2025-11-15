@@ -1,0 +1,7 @@
+TITANIC
+
+CATEGORICAL COLUMNS:
+sex
+
+
+GIÁ NHÀ: 1, 3, 4, 5, 7 => Chạy để ra kết quả để tối ưu bài tập 7
